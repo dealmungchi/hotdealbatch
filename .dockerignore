@@ -1,0 +1,13 @@
+.git
+.github
+.gradle
+.idea
+build/
+!build/libs/*.jar
+**/node_modules/
+out/
+logs/
+.DS_Store
+.settings/
+.classpath
+.project

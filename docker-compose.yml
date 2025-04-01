@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  app:
+    build: 
+      context: .
+      args:
+        - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-dev}
+    container_name: hotdealbatch
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-dev}
+      - DB_HOST=${DB_HOST:-mysql}
+      - DB_PORT=${DB_PORT:-3306}
+      - DB_NAME=${DB_NAME:-hotdeals}
+      - DB_USERNAME=${DB_USERNAME:-hotdeals_user}
+      - DB_PASSWORD=${DB_PASSWORD:-hotdeals_pass}
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+    depends_on:
+      - mysql
+      - redis
+    volumes:
+      - ./logs:/var/log/hotdealbatch
+
+  mysql:
+    image: mysql:8.0
+    container_name: hotdealbatch-mysql
+    restart: always
+    environment:
+      - MYSQL_DATABASE=${DB_NAME:-hotdeals}
+      - MYSQL_USER=${DB_USERNAME:-hotdeals_user}
+      - MYSQL_PASSWORD=${DB_PASSWORD:-hotdeals_pass}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-root_password}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+
+  redis:
+    image: redis:7.0
+    container_name: hotdealbatch-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
+volumes:
+  mysql-data:
+  redis-data:
