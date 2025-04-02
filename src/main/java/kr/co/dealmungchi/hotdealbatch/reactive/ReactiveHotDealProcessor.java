@@ -41,14 +41,14 @@ public class ReactiveHotDealProcessor {
     public void push(HotDealDto dto) {
         Sinks.EmitResult result = sink.tryEmitNext(dto);
         if (result.isFailure()) {
-            log.warn("Failed to emit hot deal: {}. Result: {}", dto, result);
+            log.warn("Failed to emit hot deal: {} {} . Result: {}", dto.provider(), dto.link(), result);
         }
     }
 
     private void processBatch(List<HotDealDto> dtos) {
         if (dtos.isEmpty()) return;
 
-        log.info("Processing batch of {} hot deals", dtos.size());
+        log.debug("Processing batch of {} hot deals", dtos.size());
 
         // Collect all links in the batch and query DB at once
         List<String> links = dtos.stream()
@@ -63,7 +63,7 @@ public class ReactiveHotDealProcessor {
         List<HotDeal> dealsToSave = dtos.stream()
                 .filter(dto -> {
                     if (existingLinks.contains(dto.link())) {
-                        log.info("Duplicate found for link: {}", dto.link());
+                        log.debug("Duplicate found for link: {}", dto.link());
                         return false;
                     }
                     return true;

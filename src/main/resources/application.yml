@@ -7,11 +7,43 @@ spring:
   jpa:
     hibernate:
       ddl-auto: none
+  data:
+    redis:
+      repositories:
+        enabled: false
 
 logging:
   level:
     root: INFO
     
+redis:
+  stream:
+    key: ${REDIS_STREAM_KEY:streamHotdeals}
+    partitions: ${REDIS_STREAM_PARTITIONS:1}
+    consumer-group: ${REDIS_STREAM_CONSUMER_GROUP:hotdeals-batch-group}
+    consumer-prefix: ${REDIS_STREAM_CONSUMER_PREFIX:consumer-}
+    block-timeout: ${REDIS_STREAM_BLOCK_TIMEOUT:2000}
+    batch-size: ${REDIS_STREAM_BATCH_SIZE:10}
+    poll-timeout: ${REDIS_STREAM_POLL_TIMEOUT:100}
+    delivery-retry-count: ${REDIS_STREAM_DELIVERY_RETRY_COUNT:3}
+    message-claim-min-idle-time: ${REDIS_STREAM_MESSAGE_CLAIM_MIN_IDLE_TIME:30000}
+    backpressure-buffer-size: ${REDIS_STREAM_BACKPRESSURE_BUFFER_SIZE:512}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  prometheus:
+    metrics:
+      export:
+          enabled: true
+
+  metrics:
+    distribution:
+      percentiles-histogram:
+        hotdeal.message.processing.time: true
+
 ---
 
 spring:
@@ -31,7 +63,7 @@ spring:
       enabled: true
       path: /h2-console
   jpa:
-    show-sql: true
+    show-sql: false
     hibernate:
       ddl-auto: create
     defer-datasource-initialization: true
@@ -42,7 +74,8 @@ spring:
 
 logging:
   level:
-    kr.co.dealmungchi: DEBUG
+    kr.co.dealmungchi: INFO
+    org.springframework.data.redis: INFO
 
 ---
 
@@ -66,4 +99,3 @@ spring:
 logging:
   level:
     kr.co.dealmungchi: INFO
-

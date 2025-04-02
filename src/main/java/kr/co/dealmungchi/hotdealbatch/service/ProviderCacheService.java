@@ -25,11 +25,11 @@ public class ProviderCacheService {
     }
 
     public void refreshCache() {
-        log.info("Refreshing provider cache");
+        log.debug("Refreshing provider cache");
         providerCache.clear();
         providerRepository.findAll().forEach(provider -> 
             providerCache.put(provider.getProviderType(), provider));
-        log.info("Provider cache refreshed with {} entries", providerCache.size());
+        log.debug("Provider cache refreshed with {} entries", providerCache.size());
     }
 
     public Provider getProvider(ProviderType providerType) {

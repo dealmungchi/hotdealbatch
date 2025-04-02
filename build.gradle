@@ -24,6 +24,7 @@ dependencies {
     
     // Redis
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis-reactive'
     
     // Spring Batch
     implementation 'org.springframework.boot:spring-boot-starter-batch'
@@ -34,18 +35,27 @@ dependencies {
     // Reactive
     implementation 'io.projectreactor:reactor-core'
     
-    // Actuator
+    // Actuator & Metrics
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'io.micrometer:micrometer-registry-prometheus'
     
     // Lombok
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
+    testCompileOnly 'org.projectlombok:lombok'
+    testAnnotationProcessor 'org.projectlombok:lombok'
     
+    // Test
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.batch:spring-batch-test'
+    testImplementation 'io.projectreactor:reactor-test'
+    testImplementation 'org.testcontainers:testcontainers'
+    testImplementation 'org.testcontainers:junit-jupiter'
+    
+    // Embedded Redis for testing
+    testImplementation 'it.ozimov:embedded-redis:0.7.3'
 }
 
 tasks.named('test') {
     useJUnitPlatform()
 }
-

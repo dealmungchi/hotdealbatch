@@ -1,84 +1,122 @@
 # HotDeal Batch Processor
 
-A batch processing system for collecting and processing hot deals from various sites.
+A Spring Boot application that processes hot deals from multiple providers using Redis Streams.
 
-## Project Overview
+## Overview
 
-This project receives hot deal information via Redis, processes it using reactive programming, and stores it in a database.
+This application consumes messages from Redis Streams, processes them, and stores them in a database. It uses a consumer group approach with acknowledgment to ensure reliable message delivery.
 
-## Key Features
+## Features
 
-- Hot deal data reception through Redis message subscription
-- Reactive backpressure management and batch processing
-- Duplicate handling before database storage
-- Integrated management of hot deals from multiple sites (PPOMPPPU, CLIEN, etc.)
+- Redis Streams integration with consumer group processing
+- Base64 message decoding
+- Explicit acknowledgment (XACK) for processed messages
+- Pending message recovery with XCLAIM
+- Back-pressure control
+- Metrics collection with Micrometer and Prometheus
+- Environment-specific configuration
+- Containerization with Docker
 
-## Tech Stack
+## Requirements
 
-- Java 17
-- Spring Boot 3.4.x
-- Spring Data JPA
-- Spring Batch
-- Redis
-- Project Reactor
-- H2 Database (for development)
-- MySQL (for production)
-- Docker
+- JDK 17+
+- Redis 7.0+
+- MySQL 8.0+ (for production) or H2 (for development)
 
-## Development Setup
+## Configuration
 
-### Requirements
+The application is configured through environment variables:
 
-- JDK 17
-- Gradle
-- Redis server
+### Redis Stream Configuration
 
-### Running Locally
+| Variable | Description | Default Value |
+|----------|-------------|---------------|
+| REDIS_STREAM_KEY | Base key for Redis Streams | streamHotdeals |
+| REDIS_STREAM_PARTITIONS | Number of stream partitions | 1 |
+| REDIS_STREAM_CONSUMER_GROUP | Consumer group name | hotdeals-batch-group |
+| REDIS_STREAM_CONSUMER_PREFIX | Prefix for consumer IDs | consumer- |
+| REDIS_STREAM_BLOCK_TIMEOUT | Blocking timeout in milliseconds | 2000 |
+| REDIS_STREAM_BATCH_SIZE | Number of messages to read in a batch | 10 |
+| REDIS_STREAM_POLL_TIMEOUT | Poll timeout in milliseconds | 100 |
+| REDIS_STREAM_DELIVERY_RETRY_COUNT | Number of retries for message delivery | 3 |
+| REDIS_STREAM_MESSAGE_CLAIM_MIN_IDLE_TIME | Minimum idle time for claiming pending messages (ms) | 30000 |
+
+### Redis Connection Configuration
+
+| Variable | Description | Default Value |
+|----------|-------------|---------------|
+| REDIS_HOST | Redis host | localhost |
+| REDIS_PORT | Redis port | 6379 |
+
+### Database Configuration
+
+| Variable | Description | Default Value |
+|----------|-------------|---------------|
+| DB_HOST | Database host | localhost |
+| DB_PORT | Database port | 3306 |
+| DB_NAME | Database name | hotdeals |
+| DB_USERNAME | Database username | - |
+| DB_PASSWORD | Database password | - |
+
+## Running in Development Mode
+
+Use Docker Compose for local development:
 
 ```bash
-# Run in development environment
-./gradlew bootRun --args='--spring.profiles.active=dev'
-
-# Run in production environment
-./gradlew bootRun --args='--spring.profiles.active=prod'
+docker-compose up
 ```
 
-### Running with Docker
+To run the application without Docker:
 
 ```bash
-# Build the application
-./gradlew clean build
-
-# Run with Docker in development environment
-docker-compose up -d
+./gradlew bootRun
 ```
 
-Environment variables can be set in the `.env` file or passed directly. Default values will be used if not specified. See `.env.example` for required variables.
+## Running in Production Mode
 
-## Configuration Files
+Build the Docker image:
 
-- `application.yml`: Spring Boot configuration
-  - Development environment (`dev`): Uses H2 in-memory database
-  - Production environment (`prod`): Uses MySQL database
+```bash
+docker build -t hotdealbatch:latest .
+```
 
-## Data Flow
+Run the container:
 
-1. Message reception from Redis "hotdeals" channel
-2. Batch processing through ReactiveHotDealProcessor
-3. Duplicate checking and storage in database
+```bash
+docker run -p 8080:8080 \
+  -e SPRING_PROFILES_ACTIVE=prod \
+  -e REDIS_HOST=your-redis-host \
+  -e DB_HOST=your-db-host \
+  -e DB_USERNAME=your-username \
+  -e DB_PASSWORD=your-password \
+  hotdealbatch:latest
+```
 
-## Docker Configuration
+## Message Format
 
-- `Dockerfile`: Application container configuration
-- `docker-compose.yml`: Configuration for application, MySQL, and Redis
+Redis Stream messages are expected in the following format:
 
-## Project Structure
+```
+XADD streamHotdeals:0 * Coolandjoy "base64EncodedData"
+```
 
-- `src/main/java/kr/co/dealmungchi/hotdealbatch/`
-  - `batch/`: Spring Batch configuration
-  - `dto/`: Data Transfer Objects
-  - `entity/`: Database entities
-  - `listener/`: Redis message listeners
-  - `reactive/`: Reactive processing components
-  - `repository/`: Data repositories
-  - `service/`: Business logic services
+Where:
+- `streamHotdeals:0` is the stream key
+- `Coolandjoy` is the provider name
+- `base64EncodedData` is a Base64-encoded JSON array of hot deal objects
+
+## Monitoring
+
+The application exposes metrics through Spring Actuator:
+
+- Health check: `/actuator/health`
+- Metrics: `/actuator/metrics`
+- Prometheus endpoint: `/actuator/prometheus`
+
+## Testing
+
+Run the tests with:
+
+```bash
+./gradlew test
+```
