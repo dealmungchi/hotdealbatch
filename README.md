@@ -13,8 +13,7 @@ This application consumes messages from Redis Streams, processes them, and store
 - Explicit acknowledgment (XACK) for processed messages
 - Pending message recovery with XCLAIM
 - Back-pressure control
-- Metrics collection with Micrometer and Prometheus
-- Environment-specific configuration
+- dotenv configuration
 - Containerization with Docker
 
 ## Requirements
@@ -104,19 +103,3 @@ Where:
 - `streamHotdeals:0` is the stream key
 - `Coolandjoy` is the provider name
 - `base64EncodedData` is a Base64-encoded JSON array of hot deal objects
-
-## Monitoring
-
-The application exposes metrics through Spring Actuator:
-
-- Health check: `/actuator/health`
-- Metrics: `/actuator/metrics`
-- Prometheus endpoint: `/actuator/prometheus`
-
-## Testing
-
-Run the tests with:
-
-```bash
-./gradlew test
-```
