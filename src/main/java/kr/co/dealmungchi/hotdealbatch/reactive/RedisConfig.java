@@ -1,4 +1,4 @@
-package kr.co.dealmungchi.hotdealbatch.listener;
+package kr.co.dealmungchi.hotdealbatch.reactive;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
