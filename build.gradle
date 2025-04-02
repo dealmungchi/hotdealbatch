@@ -26,9 +26,6 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     implementation 'org.springframework.boot:spring-boot-starter-data-redis-reactive'
     
-    // Spring Batch
-    implementation 'org.springframework.boot:spring-boot-starter-batch'
-    
     // JSON
     implementation 'com.fasterxml.jackson.core:jackson-databind'
     
