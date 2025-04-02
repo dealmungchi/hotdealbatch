@@ -24,6 +24,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @Slf4j
@@ -157,17 +158,21 @@ public class ReactiveRedisStreamConsumer {
         return messageHandler.handleMessageReactive(message)
                 .timeout(Duration.ofSeconds(10))
                 .then(Mono.just(true))
+                .flatMap(success -> acknowledgeMessage(streamKey, messageId).thenReturn(true))
                 .doOnSuccess(success -> {
-                    sample.stop(processingTimer);
                     messagesProcessedCounter.increment();
                 })
-                .flatMap(success -> acknowledgeMessage(streamKey, messageId).thenReturn(true))
                 .doOnError(e -> {
-                    sample.stop(processingTimer);
                     messagesFailedCounter.increment();
                     log.error("Failed to process message {} from stream {}", messageId, streamKey, e);
                 })
-                .onErrorResume(e -> Mono.just(false));
+                .doFinally(signal -> sample.stop(processingTimer))
+                .onErrorResume(e -> {
+                    if (e instanceof TimeoutException) {
+                        log.warn("Timeout during processing of message {}", messageId);
+                    }
+                    return Mono.just(false);
+                });
     }
 
     private Mono<Long> acknowledgeMessage(String streamKey, String messageId) {

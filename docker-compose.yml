@@ -5,32 +5,32 @@ services:
     build: 
       context: .
       args:
-        - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-dev}
+        - SPRING_PROFILES_ACTIVE=prod
     container_name: hotdealbatch
     restart: always
     ports:
       - "8080:8080"
     environment:
-      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-dev}
+      - SPRING_PROFILES_ACTIVE=prod
       # Database configuration
-      - DB_HOST=${DB_HOST:-mysql}
-      - DB_PORT=${DB_PORT:-3306}
-      - DB_NAME=${DB_NAME:-hotdeals}
-      - DB_USERNAME=${DB_USERNAME:-hotdeals_user}
-      - DB_PASSWORD=${DB_PASSWORD:-hotdeals_pass}
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_NAME=hotdeals
+      - DB_USERNAME=hotdeals_user
+      - DB_PASSWORD=hotdeals_pass
       # Redis configuration
-      - REDIS_HOST=${REDIS_HOST:-redis}
-      - REDIS_PORT=${REDIS_PORT:-6379}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
       # Redis Stream configuration
-      - REDIS_STREAM_KEY=${REDIS_STREAM_KEY:-streamHotdeals}
-      - REDIS_STREAM_PARTITIONS=${REDIS_STREAM_PARTITIONS:-1}
-      - REDIS_STREAM_CONSUMER_GROUP=${REDIS_STREAM_CONSUMER_GROUP:-hotdeals-batch-group}
-      - REDIS_STREAM_CONSUMER_PREFIX=${REDIS_STREAM_CONSUMER_PREFIX:-consumer-}
-      - REDIS_STREAM_BLOCK_TIMEOUT=${REDIS_STREAM_BLOCK_TIMEOUT:-2000}
-      - REDIS_STREAM_BATCH_SIZE=${REDIS_STREAM_BATCH_SIZE:-10}
-      - REDIS_STREAM_POLL_TIMEOUT=${REDIS_STREAM_POLL_TIMEOUT:-100}
-      - REDIS_STREAM_DELIVERY_RETRY_COUNT=${REDIS_STREAM_DELIVERY_RETRY_COUNT:-3}
-      - REDIS_STREAM_MESSAGE_CLAIM_MIN_IDLE_TIME=${REDIS_STREAM_MESSAGE_CLAIM_MIN_IDLE_TIME:-30000}
+      - REDIS_STREAM_KEY=streamHotdeals
+      - REDIS_STREAM_PARTITIONS=1
+      - REDIS_STREAM_CONSUMER_GROUP=hotdeals-batch-group
+      - REDIS_STREAM_CONSUMER_PREFIX=consumer-
+      - REDIS_STREAM_BLOCK_TIMEOUT=2000
+      - REDIS_STREAM_BATCH_SIZE=10
+      - REDIS_STREAM_POLL_TIMEOUT=100
+      - REDIS_STREAM_DELIVERY_RETRY_COUNT=3
+      - REDIS_STREAM_MESSAGE_CLAIM_MIN_IDLE_TIME=30000
     depends_on:
       - mysql
       - redis
@@ -48,17 +48,17 @@ services:
     container_name: hotdealbatch-mysql
     restart: always
     environment:
-      - MYSQL_DATABASE=${DB_NAME:-hotdeals}
-      - MYSQL_USER=${DB_USERNAME:-hotdeals_user}
-      - MYSQL_PASSWORD=${DB_PASSWORD:-hotdeals_pass}
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-root_password}
+      - MYSQL_DATABASE=hotdeals
+      - MYSQL_USER=hotdeals_user
+      - MYSQL_PASSWORD=hotdeals_pass
+      - MYSQL_ROOT_PASSWORD=root_password
     ports:
       - "3306:3306"
     volumes:
       - mysql-data:/var/lib/mysql
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$MYSQL_ROOT_PASSWORD"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_password"]
       interval: 10s
       timeout: 5s
       retries: 5
