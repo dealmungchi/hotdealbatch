@@ -34,7 +34,7 @@ The application is configured through environment variables:
 | REDIS_STREAM_KEY | Base key for Redis Streams | streamHotdeals |
 | REDIS_STREAM_PARTITIONS | Number of stream partitions | 1 |
 | REDIS_STREAM_CONSUMER_GROUP | Consumer group name | hotdeals-batch-group |
-| REDIS_STREAM_CONSUMER_PREFIX | Prefix for consumer IDs | consumer- |
+| REDIS_STREAM_CONSUMER | consumer ID | consumer-1 |
 | REDIS_STREAM_BLOCK_TIMEOUT | Blocking timeout in milliseconds | 2000 |
 | REDIS_STREAM_BATCH_SIZE | Number of messages to read in a batch | 10 |
 | REDIS_STREAM_POLL_TIMEOUT | Poll timeout in milliseconds | 100 |

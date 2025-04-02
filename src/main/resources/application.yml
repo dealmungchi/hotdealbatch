@@ -21,7 +21,7 @@ redis:
     key-prefix: ${REDIS_STREAM_KEY:streamHotdeals}
     partitions: ${REDIS_STREAM_PARTITIONS:1}
     consumer-group: ${REDIS_STREAM_CONSUMER_GROUP:hotdeals-batch-group}
-    consumer-prefix: ${REDIS_STREAM_CONSUMER_PREFIX:consumer-}
+    consumer: ${REDIS_STREAM_CONSUMER:consumer-1}
     block-timeout: ${REDIS_STREAM_BLOCK_TIMEOUT:2000}
     batch-size: ${REDIS_STREAM_BATCH_SIZE:10}
     poll-timeout: ${REDIS_STREAM_POLL_TIMEOUT:100}

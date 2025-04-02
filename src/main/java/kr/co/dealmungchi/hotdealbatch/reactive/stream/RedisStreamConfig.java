@@ -22,8 +22,8 @@ public class RedisStreamConfig {
     @Value("${redis.stream.consumer-group:hotdeals-batch-group}")
     private String consumerGroup;
 
-    @Value("${redis.stream.consumer-prefix:consumer-}")
-    private String consumerPrefix;
+    @Value("${redis.stream.consumer:consumer-1}")
+    private String consumer;
 
     @Value("${redis.stream.block-timeout:2000}")
     private long blockTimeout;

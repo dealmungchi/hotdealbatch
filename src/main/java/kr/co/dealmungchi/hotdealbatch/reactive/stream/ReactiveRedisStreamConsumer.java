@@ -6,7 +6,6 @@ import io.micrometer.core.instrument.Timer;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.Range;
@@ -31,6 +30,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Component
 @RequiredArgsConstructor
 public class ReactiveRedisStreamConsumer {
+    private static final int STREAM_MAX_LENGTH = 200;
 
     private final ReactiveRedisTemplate<String, String> reactiveRedisTemplate;
     private final RedisStreamConfig config;
@@ -51,7 +51,7 @@ public class ReactiveRedisStreamConsumer {
     @EventListener(ApplicationReadyEvent.class)
     public void init() {
         initMetrics();
-        consumerId = config.getConsumerPrefix() + UUID.randomUUID();
+        consumerId = config.getConsumer();
 
         config.getStreamKeys().forEach(streamKey -> {
             createConsumerGroup(streamKey).subscribe(
@@ -67,6 +67,10 @@ public class ReactiveRedisStreamConsumer {
 
         claimTaskSubscription = Flux.interval(Duration.ofSeconds(30))
                 .flatMap(tick -> claimPendingMessages())
+                .subscribe();
+
+        Flux.interval(Duration.ofMinutes(1))
+                .flatMap(tick -> trimStreams())
                 .subscribe();
 
         log.info("Reactive Redis Stream Consumer initialized with consumerId: {}", consumerId);
@@ -118,16 +122,15 @@ public class ReactiveRedisStreamConsumer {
         ReactiveStreamOperations<String, Object, Object> streamOps = reactiveRedisTemplate.opsForStream();
         Consumer consumer = Consumer.from(config.getConsumerGroup(), consumerId);
 
-        return Flux
-                .defer(() -> streamOps.read(consumer,
+        return Flux.defer(() -> streamOps.read(consumer,
                         StreamReadOptions.empty().count(config.getBatchSize())
                                 .block(Duration.ofMillis(config.getBlockTimeout())),
                         StreamOffset.create(streamKey, ReadOffset.lastConsumed())))
                 .repeat()
                 .flatMap(record -> {
                     String messageId = record.getId().getValue();
-                    pendingMessageIds.computeIfAbsent(streamKey, k -> new ConcurrentHashMap<>()).put(messageId,
-                            Instant.now());
+                    pendingMessageIds.computeIfAbsent(streamKey, k -> new ConcurrentHashMap<>())
+                            .put(messageId, Instant.now());
                     return processRedisRecord(streamKey, record).doOnSuccess(success -> {
                         if (success)
                             pendingMessageIds.getOrDefault(streamKey, Collections.emptyMap()).remove(messageId);
@@ -159,9 +162,7 @@ public class ReactiveRedisStreamConsumer {
                 .timeout(Duration.ofSeconds(10))
                 .then(Mono.just(true))
                 .flatMap(success -> acknowledgeMessage(streamKey, messageId).thenReturn(true))
-                .doOnSuccess(success -> {
-                    messagesProcessedCounter.increment();
-                })
+                .doOnSuccess(success -> messagesProcessedCounter.increment())
                 .doOnError(e -> {
                     messagesFailedCounter.increment();
                     log.error("Failed to process message {} from stream {}", messageId, streamKey, e);
@@ -178,8 +179,7 @@ public class ReactiveRedisStreamConsumer {
     private Mono<Long> acknowledgeMessage(String streamKey, String messageId) {
         ReactiveStreamOperations<String, Object, Object> ops = reactiveRedisTemplate.opsForStream();
 
-        return ops
-                .acknowledge(config.getConsumerGroup(),
+        return ops.acknowledge(config.getConsumerGroup(),
                         StreamRecords.newRecord().in(streamKey).withId(RecordId.of(messageId))
                                 .ofMap(Collections.emptyMap()))
                 .doOnSuccess(result -> {
@@ -225,6 +225,26 @@ public class ReactiveRedisStreamConsumer {
                                 return Mono.empty();
                             })
                             .then();
+                });
+    }
+
+    private Mono<Void> trimStreams() {
+        return Flux.fromIterable(config.getStreamKeys())
+                .flatMap(this::trimStreamToMaxLength)
+                .then();
+    }
+
+    private Mono<Long> trimStreamToMaxLength(String streamKey) {
+        ReactiveStreamOperations<String, Object, Object> ops = reactiveRedisTemplate.opsForStream();
+        long maxLength = STREAM_MAX_LENGTH;
+
+        return ops.trim(streamKey, maxLength, true)
+                .doOnSuccess(trimmed -> {
+                    log.debug("Stream {} trimmed: {} entries deleted.", streamKey, trimmed);
+                })
+                .onErrorResume(e -> {
+                    log.warn("Stream {} trimming failed: {}", streamKey, e.toString());
+                    return Mono.just(0L);
                 });
     }
 
