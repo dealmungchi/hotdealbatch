@@ -1,4 +1,4 @@
-package kr.co.dealmungchi.hotdealbatch.stream;
+package kr.co.dealmungchi.hotdealbatch.reactive.stream;
 
 import kr.co.dealmungchi.hotdealbatch.reactive.ReactiveHotDealProcessor;
 import lombok.RequiredArgsConstructor;

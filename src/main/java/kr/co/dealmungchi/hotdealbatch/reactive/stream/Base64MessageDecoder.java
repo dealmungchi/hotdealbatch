@@ -1,4 +1,4 @@
-package kr.co.dealmungchi.hotdealbatch.stream;
+package kr.co.dealmungchi.hotdealbatch.reactive.stream;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

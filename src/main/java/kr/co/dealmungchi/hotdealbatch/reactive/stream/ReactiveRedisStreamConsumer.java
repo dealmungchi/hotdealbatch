@@ -1,4 +1,4 @@
-package kr.co.dealmungchi.hotdealbatch.stream;
+package kr.co.dealmungchi.hotdealbatch.reactive.stream;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -23,6 +23,7 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -51,25 +52,23 @@ public class ReactiveRedisStreamConsumer {
     @PostConstruct
     public void init() {
         initMetrics();
-        consumerId = config.getConsumerId();
+        consumerId = config.getConsumerPrefix() + UUID.randomUUID();
         
         // Create consumer groups for all partitions if they don't exist
-        for (int i = 0; i < config.getPartitions(); i++) {
-            final String streamKey = config.getStreamKey(i);
+        config.getStreamKeys().forEach(streamKey -> {
             createConsumerGroup(streamKey)
                 .subscribe(
                     success -> log.info("Consumer group {} creation for stream {}: {}", 
                                       config.getConsumerGroup(), streamKey, success ? "success" : "already exists"),
                     error -> log.error("Failed to create consumer group for stream {}", streamKey, error)
                 );
-        }
+        });
         
         // Start consuming from all partitions
-        for (int i = 0; i < config.getPartitions(); i++) {
-            final String streamKey = config.getStreamKey(i);
+        config.getStreamKeys().forEach(streamKey -> {
             Disposable subscription = startStreamConsumption(streamKey);
             streamSubscriptions.put(streamKey, subscription);
-        }
+        });
         
         // Start periodic task to claim pending messages
         claimTaskSubscription = Flux.interval(Duration.ofSeconds(30))
@@ -80,8 +79,8 @@ public class ReactiveRedisStreamConsumer {
     }
     
     private void initMetrics() {
-        log.info("Redis Stream Config: streamKey={}, partitions={}, consumerGroup={}, consumerPrefix={}",
-                config.getStreamKey(), config.getPartitions(), config.getConsumerGroup(), config.getConsumerPrefix());
+        log.info("Redis Stream Config: streamKeyPrefix={}, partitions={}, consumerGroup={}, consumerPrefix={}",
+                config.getStreamKeyPrefix(), config.getPartitions(), config.getConsumerGroup(), config.getConsumerPrefix());
         processingTimer = Timer.builder("hotdeal.message.processing.time")
                 .description("Time taken to process hot deal messages")
                 .register(meterRegistry);
@@ -217,7 +216,7 @@ public class ReactiveRedisStreamConsumer {
                                                 signal.failure().getMessage())))
             .subscribeOn(Schedulers.boundedElastic())
             .subscribe(
-                success -> { /* Success is handled in flatMap */ },
+                success -> log.debug("stream subscription completed for {}", streamKey),
                 error -> log.error("Unexpected error in stream subscription", error)
             );
     }
@@ -311,9 +310,8 @@ public class ReactiveRedisStreamConsumer {
             return Mono.empty();
         }
         
-        return Flux.range(0, config.getPartitions())
-            .flatMap(i -> {
-                String streamKey = config.getStreamKey(i);
+        return Flux.fromIterable(config.getStreamKeys())
+            .flatMap(streamKey -> {
                 return claimPendingMessagesFromStream(streamKey);
             })
             .then();

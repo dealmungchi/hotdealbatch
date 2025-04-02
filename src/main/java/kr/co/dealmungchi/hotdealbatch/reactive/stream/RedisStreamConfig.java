@@ -1,17 +1,20 @@
-package kr.co.dealmungchi.hotdealbatch.stream;
+package kr.co.dealmungchi.hotdealbatch.reactive.stream;
 
 import lombok.Getter;
+
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
-
-import java.util.UUID;
 
 @Configuration
 @Getter
 public class RedisStreamConfig {
 
-    @Value("${redis.stream.key:streamHotdeals}")
-    private String streamKey;
+    @Value("${redis.stream.key-prefix:streamHotdeals}")
+    private String streamKeyPrefix;
 
     @Value("${redis.stream.partitions:1}")
     private int partitions;
@@ -36,15 +39,13 @@ public class RedisStreamConfig {
 
     @Value("${redis.stream.message-claim-min-idle-time:30000}")
     private long messageClaimMinIdleTime;
-    
+
     @Value("${redis.stream.backpressure-buffer-size:512}")
     private int backpressureBufferSize;
 
-    public String getStreamKey(int partition) {
-        return String.format("%s:%d", streamKey, partition % partitions);
-    }
-
-    public String getConsumerId() {
-        return consumerPrefix + UUID.randomUUID();
+    public List<String> getStreamKeys() {
+        return IntStream.range(0, partitions)
+                .mapToObj(partition -> String.format("%s:%d", streamKeyPrefix, partition % partitions))
+                .collect(Collectors.toList());
     }
 }

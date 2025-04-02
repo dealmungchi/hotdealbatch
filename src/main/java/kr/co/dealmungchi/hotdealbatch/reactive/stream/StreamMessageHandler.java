@@ -1,4 +1,4 @@
-package kr.co.dealmungchi.hotdealbatch.stream;
+package kr.co.dealmungchi.hotdealbatch.reactive.stream;
 
 import reactor.core.publisher.Mono;
 

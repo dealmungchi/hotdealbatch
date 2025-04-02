@@ -1,4 +1,4 @@
-package kr.co.dealmungchi.hotdealbatch.stream;
+package kr.co.dealmungchi.hotdealbatch.reactive.stream;
 
 import lombok.Builder;
 import lombok.Getter;
