@@ -1,11 +1,13 @@
 package kr.co.dealmungchi.hotdealbatch.service;
 
-import jakarta.annotation.PostConstruct;
 import kr.co.dealmungchi.hotdealbatch.entity.Provider;
 import kr.co.dealmungchi.hotdealbatch.entity.ProviderType;
 import kr.co.dealmungchi.hotdealbatch.repository.ProviderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
@@ -19,7 +21,7 @@ public class ProviderCacheService {
     private final ProviderRepository providerRepository;
     private final Map<ProviderType, Provider> providerCache = new ConcurrentHashMap<>();
 
-    @PostConstruct
+    @EventListener(ApplicationReadyEvent.class)
     public void init() {
         refreshCache();
     }

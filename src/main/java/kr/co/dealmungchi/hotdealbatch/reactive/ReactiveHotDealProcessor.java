@@ -7,11 +7,13 @@ import kr.co.dealmungchi.hotdealbatch.repository.HotDealRepository;
 import kr.co.dealmungchi.hotdealbatch.service.ProviderCacheService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Sinks;
 import reactor.core.scheduler.Schedulers;
 
-import jakarta.annotation.PostConstruct;
 import java.time.Duration;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -27,7 +29,7 @@ public class ReactiveHotDealProcessor {
     // Sink: Buffers up to 100 items while managing backpressure
     private final Sinks.Many<HotDealDto> sink = Sinks.many().multicast().onBackpressureBuffer(100, false);
 
-    @PostConstruct
+    @EventListener(ApplicationReadyEvent.class)
     public void init() {
         sink.asFlux()
             .onBackpressureBuffer(100, dropped -> log.warn("Dropped hot deal due to backpressure: {}", dropped))
@@ -46,7 +48,9 @@ public class ReactiveHotDealProcessor {
     }
 
     private void processBatch(List<HotDealDto> dtos) {
-        if (dtos.isEmpty()) return;
+        if (dtos.isEmpty()) {
+            return;
+        }
 
         log.debug("Processing batch of {} hot deals", dtos.size());
 
@@ -80,4 +84,3 @@ public class ReactiveHotDealProcessor {
         }
     }
 }
-
