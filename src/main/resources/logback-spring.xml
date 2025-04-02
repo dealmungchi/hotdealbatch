@@ -2,22 +2,62 @@
 <configuration>
     <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
     
-    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
-        </encoder>
-    </appender>
+    <!-- Development Environment -->
+    <springProfile name="dev">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            </encoder>
+        </appender>
+        
+        <!-- Lettuce logging -->
+        <logger name="io.lettuce.core" level="INFO"/>
+        
+        <!-- Spring Data Redis logging -->
+        <logger name="org.springframework.data.redis" level="INFO"/>
+        
+        <!-- Application logging -->
+        <logger name="kr.co.dealmungchi.hotdealbatch" level="DEBUG"/>
+        
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </springProfile>
     
-    <!-- Lettuce 로깅 활성화 -->
-    <logger name="io.lettuce.core" level="INFO"/>
-    
-    <!-- Spring Data Redis 로깅 활성화 -->
-    <logger name="org.springframework.data.redis" level="INFO"/>
-    
-    <!-- 애플리케이션 로깅 활성화 -->
-    <logger name="kr.co.dealmungchi.hotdealbatch" level="INFO"/>
-    
-    <root level="INFO">
-        <appender-ref ref="CONSOLE"/>
-    </root>
+    <!-- Production Environment -->
+    <springProfile name="prod">
+        <property name="LOG_DIR" value="${LOG_DIR:-/var/log/hotdealbatch}"/>
+        
+        <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>${LOG_DIR}/hotdealbatch.log</file>
+            <encoder>
+                <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            </encoder>
+            <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                <fileNamePattern>${LOG_DIR}/archived/hotdealbatch.%d{yyyy-MM-dd}.log</fileNamePattern>
+                <maxHistory>30</maxHistory>
+                <totalSizeCap>3GB</totalSizeCap>
+            </rollingPolicy>
+        </appender>
+        
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            </encoder>
+        </appender>
+        
+        <!-- Lettuce logging -->
+        <logger name="io.lettuce.core" level="WARN"/>
+        
+        <!-- Spring Data Redis logging -->
+        <logger name="org.springframework.data.redis" level="WARN"/>
+        
+        <!-- Application logging -->
+        <logger name="kr.co.dealmungchi.hotdealbatch" level="WARN"/>
+        
+        <root level="WARN">
+            <appender-ref ref="FILE"/>
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </springProfile>
 </configuration>
