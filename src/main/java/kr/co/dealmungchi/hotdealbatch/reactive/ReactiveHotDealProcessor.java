@@ -77,8 +77,6 @@ public class ReactiveHotDealProcessor {
         if (!dealsToSave.isEmpty()) {
             repository.saveAll(dealsToSave);
             log.info("Saved {} new hot deals", dealsToSave.size());
-        } else {
-            log.info("No new hot deals to save in this batch");
         }
     }
 }

@@ -12,10 +12,10 @@
     <logger name="io.lettuce.core" level="INFO"/>
     
     <!-- Spring Data Redis 로깅 활성화 -->
-    <logger name="org.springframework.data.redis" level="DEBUG"/>
+    <logger name="org.springframework.data.redis" level="INFO"/>
     
     <!-- 애플리케이션 로깅 활성화 -->
-    <logger name="kr.co.dealmungchi.hotdealbatch" level="DEBUG"/>
+    <logger name="kr.co.dealmungchi.hotdealbatch" level="INFO"/>
     
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>

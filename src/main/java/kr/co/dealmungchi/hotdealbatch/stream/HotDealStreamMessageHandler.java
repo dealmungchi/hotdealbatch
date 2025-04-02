@@ -1,6 +1,5 @@
 package kr.co.dealmungchi.hotdealbatch.stream;
 
-import kr.co.dealmungchi.hotdealbatch.dto.HotDealDto;
 import kr.co.dealmungchi.hotdealbatch.reactive.ReactiveHotDealProcessor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
