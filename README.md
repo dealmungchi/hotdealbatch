@@ -98,13 +98,34 @@ docker build -t hotdealbatch:latest .
 Run the container:
 
 ```bash
-docker run -p 8080:8080 \
+docker run -d \
+  -p 8080:8080 \
+  --name hotdealbatch \
   -e SPRING_PROFILES_ACTIVE=prod \
-  -e REDIS_HOST=your-redis-host \
   -e DB_HOST=your-db-host \
-  -e DB_USERNAME=your-username \
-  -e DB_PASSWORD=your-password \
+  -e DB_PORT=5432 \
+  -e DB_NAME=your-db-name \
+  -e DB_USERNAME=your-db-user \
+  -e DB_PASSWORD=your-db-password \
+  -e REDIS_HOST=your-redis-host \
+  -e REDIS_PORT=6379 \
+  -e REDIS_STREAM_KEY=your-stream-key \
+  -e REDIS_STREAM_PARTITIONS=1 \
+  -e REDIS_STREAM_CONSUMER_GROUP=your-group \
+  -e REDIS_STREAM_CONSUMER=consumer-1 \
+  -e REDIS_STREAM_BLOCK_TIMEOUT=1000 \
+  -e REDIS_STREAM_BATCH_SIZE=10 \
+  -e REDIS_STREAM_POLL_TIMEOUT=1000 \
+  -e REDIS_STREAM_DELIVERY_RETRY_COUNT=3 \
+  -e REDIS_STREAM_MESSAGE_CLAIM_MIN_IDLE_TIME=60000 \
+  -e REDIS_STREAM_BACKPRESSURE_BUFFER_SIZE=100 \
+  -e FILE_UPLOAD_DIR=/tmp/uploads \
+  -e AWS_ACCESS_KEY_ID=your-access-key \
+  -e AWS_SECRET_ACCESS_KEY=your-secret-key \
+  -e AWS_REGION=ap-northeast-2 \
+  -e AWS_S3_BUCKET=your-bucket \
   hotdealbatch:latest
+
 ```
 
 ## Message Format
