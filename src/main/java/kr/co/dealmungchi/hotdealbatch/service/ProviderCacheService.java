@@ -1,8 +1,8 @@
 package kr.co.dealmungchi.hotdealbatch.service;
 
-import kr.co.dealmungchi.hotdealbatch.entity.Provider;
-import kr.co.dealmungchi.hotdealbatch.entity.ProviderType;
-import kr.co.dealmungchi.hotdealbatch.repository.ProviderRepository;
+import kr.co.dealmungchi.hotdealbatch.domain.entity.Provider;
+import kr.co.dealmungchi.hotdealbatch.domain.entity.ProviderType;
+import kr.co.dealmungchi.hotdealbatch.domain.repository.ProviderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 

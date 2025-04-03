@@ -1,9 +1,9 @@
 package kr.co.dealmungchi.hotdealbatch.reactive;
 
+import kr.co.dealmungchi.hotdealbatch.domain.entity.HotDeal;
+import kr.co.dealmungchi.hotdealbatch.domain.repository.HotDealRepository;
+import kr.co.dealmungchi.hotdealbatch.domain.service.HotdealService;
 import kr.co.dealmungchi.hotdealbatch.dto.HotDealDto;
-import kr.co.dealmungchi.hotdealbatch.entity.HotDeal;
-import kr.co.dealmungchi.hotdealbatch.entity.Provider;
-import kr.co.dealmungchi.hotdealbatch.repository.HotDealRepository;
 import kr.co.dealmungchi.hotdealbatch.service.ProviderCacheService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 public class ReactiveHotDealProcessor {
 
     private final HotDealRepository repository;
+    private final HotdealService hotdealService;
     private final ProviderCacheService providerCacheService;
 
     // Sink: Buffers up to 100 items while managing backpressure
@@ -73,8 +74,12 @@ public class ReactiveHotDealProcessor {
                     return true;
                 })
                 .map(dto -> {
-                    Provider provider = providerCacheService.getProvider(dto.provider());
-                    return HotDeal.fromDto(dto, provider);
+                    try {
+                        return HotDeal.fromDto(dto, hotdealService, providerCacheService);
+                    } catch (Exception e) {
+                        log.error("Error processing hot deal: {}. Error: {}", dto.link(), e.getMessage());
+                        return null;
+                    }
                 })
                 .collect(Collectors.toList());
 

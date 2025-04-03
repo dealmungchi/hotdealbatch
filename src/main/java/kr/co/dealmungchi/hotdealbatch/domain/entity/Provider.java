@@ -1,4 +1,4 @@
-package kr.co.dealmungchi.hotdealbatch.entity;
+package kr.co.dealmungchi.hotdealbatch.domain.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

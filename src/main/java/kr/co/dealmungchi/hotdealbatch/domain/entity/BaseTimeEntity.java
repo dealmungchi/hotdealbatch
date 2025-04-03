@@ -1,4 +1,4 @@
-package kr.co.dealmungchi.hotdealbatch.entity;
+package kr.co.dealmungchi.hotdealbatch.domain.entity;
 
 import java.time.LocalDateTime;
 

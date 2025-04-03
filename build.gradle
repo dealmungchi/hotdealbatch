@@ -41,6 +41,12 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok'
     testCompileOnly 'org.projectlombok:lombok'
     testAnnotationProcessor 'org.projectlombok:lombok'
+
+    // Guava
+    implementation 'com.google.guava:guava:latest.release'
+
+    // S3
+    implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3:3.1.1'
     
     // Test
     testImplementation 'org.springframework.boot:spring-boot-starter-test'

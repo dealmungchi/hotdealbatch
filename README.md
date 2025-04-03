@@ -10,6 +10,7 @@ This application consumes messages from Redis Streams, processes them, and store
 
 - Redis Streams integration with consumer group processing
 - Base64 message decoding
+- Thumbnail processing to hash and store to local or S3(optional) storage
 - Explicit acknowledgment (XACK) for processed messages
 - Pending message recovery with XCLAIM
 - Back-pressure control
@@ -56,6 +57,21 @@ The application is configured through environment variables:
 | DB_NAME | Database name | hotdeals |
 | DB_USERNAME | Database username | - |
 | DB_PASSWORD | Database password | - |
+
+### LocalFile Configuration
+
+| Variable | Description | Default Value |
+|----------|-------------|---------------|
+| FILE_UPLOAD_DIR | store path on local | /usr/local/share/data |
+
+### S3 Configuration
+
+| Variable | Description | Default Value |
+|----------|-------------|---------------|
+| AWS_ACCESS_KEY_ID | aws access key | your_access_key_id |
+| AWS_SECRET_ACCESS_KEY | aws secret key | your_secret_access_key |
+| AWS_REGION | aws region | ap-northeast-2 |
+| AWS_S3_BUCKET_NAME | aws s3 bucket name | hotdeals |
 
 ## Running in Development Mode
 

@@ -1,7 +1,8 @@
-package kr.co.dealmungchi.hotdealbatch.repository;
+package kr.co.dealmungchi.hotdealbatch.domain.repository;
 
-import kr.co.dealmungchi.hotdealbatch.entity.HotDeal;
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import kr.co.dealmungchi.hotdealbatch.domain.entity.HotDeal;
 
 import java.util.List;
 
