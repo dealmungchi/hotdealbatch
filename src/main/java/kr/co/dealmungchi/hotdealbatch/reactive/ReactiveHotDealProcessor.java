@@ -81,6 +81,7 @@ public class ReactiveHotDealProcessor {
                         return null;
                     }
                 })
+                .filter(java.util.Objects::nonNull)
                 .collect(Collectors.toList());
 
         if (!dealsToSave.isEmpty()) {
