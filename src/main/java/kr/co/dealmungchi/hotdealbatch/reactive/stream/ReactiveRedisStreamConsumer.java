@@ -53,6 +53,7 @@ public class ReactiveRedisStreamConsumer {
         initMetrics();
         consumerId = config.getConsumer();
 
+        // Create a consumer group for all streams
         config.getStreamKeys().forEach(streamKey -> {
             createConsumerGroup(streamKey).subscribe(
                     success -> log.info("Consumer group {} creation for stream {}: {}", config.getConsumerGroup(),
@@ -60,15 +61,18 @@ public class ReactiveRedisStreamConsumer {
                     error -> log.error("Failed to create consumer group for stream {}", streamKey, error));
         });
 
+        // Start consumption for all streams
         config.getStreamKeys().forEach(streamKey -> {
             Disposable subscription = startStreamConsumption(streamKey);
             streamSubscriptions.put(streamKey, subscription);
         });
 
+        // Periodic reclaiming of pending messages
         claimTaskSubscription = Flux.interval(Duration.ofSeconds(30))
                 .flatMap(tick -> claimPendingMessages())
                 .subscribe();
 
+        // Periodically run stream trimming (size limit for memory management)
         Flux.interval(Duration.ofMinutes(1))
                 .flatMap(tick -> trimStreams())
                 .subscribe();
