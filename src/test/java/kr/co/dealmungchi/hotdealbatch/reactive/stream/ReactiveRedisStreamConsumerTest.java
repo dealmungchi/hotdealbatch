@@ -174,7 +174,7 @@ public class ReactiveRedisStreamConsumerTest {
         when(messageHandler.handleMessageReactive(any(RedisStreamMessage.class)))
                 .thenAnswer(invocation -> {
                     // Count down the latch in a separate thread to simulate async completion
-                    new Thread(() -> latch.countDown()).start();
+                    new Thread(latch::countDown).start();
                     return Mono.<Void>empty();
                 });
 
@@ -234,7 +234,7 @@ public class ReactiveRedisStreamConsumerTest {
         when(messageHandler.handleMessageReactive(any(RedisStreamMessage.class)))
                 .thenAnswer(invocation -> {
                     // Count down the latch in a separate thread to simulate async completion
-                    new Thread(() -> latch.countDown()).start();
+                    new Thread(latch::countDown).start();
                     return Mono.<Void>empty();
                 });
 
@@ -342,7 +342,7 @@ public class ReactiveRedisStreamConsumerTest {
         when(messageHandler.handleMessageReactive(any(RedisStreamMessage.class)))
                 .thenAnswer(invocation -> {
                     // Count down the latch in a separate thread to simulate async completion
-                    new Thread(() -> latch.countDown()).start();
+                    new Thread(latch::countDown).start();
                     return Mono.<Void>error(new RuntimeException("Test error"));
                 });
 
@@ -414,7 +414,7 @@ public class ReactiveRedisStreamConsumerTest {
         }
 
         // Verify that message is now pending
-        PendingMessagesSummary pendingSummary = streamOperations.pending(streamKey, "test-group").block();
+        PendingMessagesSummary pendingSummary = Objects.requireNonNull(streamOperations.pending(streamKey, "test-group")).block();
         if (pendingSummary == null || pendingSummary.getTotalPendingMessages() == 0) {
             return; // Skip if no pending messages
         }
@@ -429,7 +429,7 @@ public class ReactiveRedisStreamConsumerTest {
         when(messageHandler.handleMessageReactive(any(RedisStreamMessage.class)))
                 .thenAnswer(invocation -> {
                     // Count down the latch in a separate thread to simulate async completion
-                    new Thread(() -> latch.countDown()).start();
+                    new Thread(latch::countDown).start();
                     return Mono.<Void>empty();
                 });
 
