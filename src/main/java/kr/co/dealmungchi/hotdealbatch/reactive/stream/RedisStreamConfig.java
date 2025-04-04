@@ -43,9 +43,21 @@ public class RedisStreamConfig {
     @Value("${redis.stream.backpressure-buffer-size:512}")
     private int backpressureBufferSize;
 
+    @Value("${redis.stream.new-hotdeals-key-prefix:streamNewHotdeals}")
+    private String newHotDealsKeyPrefix;
+
+    @Value("${redis.stream.new-hotdeals-partitions:1}")
+    private int newHotDealsPartitions;
+
     public List<String> getStreamKeys() {
         return IntStream.range(0, partitions)
                 .mapToObj(partition -> String.format("%s:%d", streamKeyPrefix, partition % partitions))
+                .collect(Collectors.toList());
+    }
+    
+    public List<String> getNewHotDealsStreamKeys() {
+        return IntStream.range(0, newHotDealsPartitions)
+                .mapToObj(partition -> String.format("%s:%d", newHotDealsKeyPrefix, partition % newHotDealsPartitions))
                 .collect(Collectors.toList());
     }
 }

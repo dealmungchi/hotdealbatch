@@ -1,4 +1,4 @@
-package kr.co.dealmungchi.hotdealbatch.reactive;
+package kr.co.dealmungchi.hotdealbatch.reactive.stream;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

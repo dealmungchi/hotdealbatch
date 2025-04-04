@@ -30,7 +30,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Component
 @RequiredArgsConstructor
 public class ReactiveRedisStreamConsumer {
-    private static final int STREAM_MAX_LENGTH = 200;
 
     private final ReactiveRedisTemplate<String, String> reactiveRedisTemplate;
     private final RedisStreamConfig config;
@@ -53,7 +52,7 @@ public class ReactiveRedisStreamConsumer {
         initMetrics();
         consumerId = config.getConsumer();
 
-        // Create a consumer group for all streams
+        // Create a consumer group for regular streams only
         config.getStreamKeys().forEach(streamKey -> {
             createConsumerGroup(streamKey).subscribe(
                     success -> log.info("Consumer group {} creation for stream {}: {}", config.getConsumerGroup(),
@@ -61,20 +60,19 @@ public class ReactiveRedisStreamConsumer {
                     error -> log.error("Failed to create consumer group for stream {}", streamKey, error));
         });
 
-        // Start consumption for all streams
+        // Start consumption for regular streams only
         config.getStreamKeys().forEach(streamKey -> {
             Disposable subscription = startStreamConsumption(streamKey);
             streamSubscriptions.put(streamKey, subscription);
         });
 
+        // Note: We don't create consumer groups for or consume the new hot deals
+        // streams
+        // since they will be consumed by other systems
+
         // Periodic reclaiming of pending messages
         claimTaskSubscription = Flux.interval(Duration.ofSeconds(30))
                 .flatMap(tick -> claimPendingMessages())
-                .subscribe();
-
-        // Periodically run stream trimming (size limit for memory management)
-        Flux.interval(Duration.ofMinutes(1))
-                .flatMap(tick -> trimStreams())
                 .subscribe();
 
         log.info("Reactive Redis Stream Consumer initialized with consumerId: {}", consumerId);
@@ -127,9 +125,9 @@ public class ReactiveRedisStreamConsumer {
         Consumer consumer = Consumer.from(config.getConsumerGroup(), consumerId);
 
         return Flux.defer(() -> streamOps.read(consumer,
-                        StreamReadOptions.empty().count(config.getBatchSize())
-                                .block(Duration.ofMillis(config.getBlockTimeout())),
-                        StreamOffset.create(streamKey, ReadOffset.lastConsumed())))
+                StreamReadOptions.empty().count(config.getBatchSize())
+                        .block(Duration.ofMillis(config.getBlockTimeout())),
+                StreamOffset.create(streamKey, ReadOffset.lastConsumed())))
                 .repeat()
                 .flatMap(record -> {
                     String messageId = record.getId().getValue();
@@ -184,8 +182,8 @@ public class ReactiveRedisStreamConsumer {
         ReactiveStreamOperations<String, Object, Object> ops = reactiveRedisTemplate.opsForStream();
 
         return ops.acknowledge(config.getConsumerGroup(),
-                        StreamRecords.newRecord().in(streamKey).withId(RecordId.of(messageId))
-                                .ofMap(Collections.emptyMap()))
+                StreamRecords.newRecord().in(streamKey).withId(RecordId.of(messageId))
+                        .ofMap(Collections.emptyMap()))
                 .doOnSuccess(result -> {
                     Map<String, Instant> pending = pendingMessageIds.get(streamKey);
                     if (pending != null)
@@ -197,7 +195,11 @@ public class ReactiveRedisStreamConsumer {
     private Mono<Void> claimPendingMessages() {
         if (!running.get())
             return Mono.empty();
-        return Flux.fromIterable(config.getStreamKeys()).flatMap(this::claimPendingMessagesFromStream).then();
+
+        // Only claim pending messages from regular streams (not new hot deals streams)
+        return Flux.fromIterable(config.getStreamKeys())
+                .flatMap(this::claimPendingMessagesFromStream)
+                .then();
     }
 
     private Mono<Void> claimPendingMessagesFromStream(String streamKey) {
@@ -229,26 +231,6 @@ public class ReactiveRedisStreamConsumer {
                                 return Mono.empty();
                             })
                             .then();
-                });
-    }
-
-    private Mono<Void> trimStreams() {
-        return Flux.fromIterable(config.getStreamKeys())
-                .flatMap(this::trimStreamToMaxLength)
-                .then();
-    }
-
-    private Mono<Long> trimStreamToMaxLength(String streamKey) {
-        ReactiveStreamOperations<String, Object, Object> ops = reactiveRedisTemplate.opsForStream();
-        long maxLength = STREAM_MAX_LENGTH;
-
-        return ops.trim(streamKey, maxLength, true)
-                .doOnSuccess(trimmed -> {
-                    log.debug("Stream {} trimmed: {} entries deleted.", streamKey, trimmed);
-                })
-                .onErrorResume(e -> {
-                    log.warn("Stream {} trimming failed: {}", streamKey, e.toString());
-                    return Mono.just(0L);
                 });
     }
 

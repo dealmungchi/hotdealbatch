@@ -1,6 +1,5 @@
 package kr.co.dealmungchi.hotdealbatch.reactive.stream;
 
-import kr.co.dealmungchi.hotdealbatch.reactive.ReactiveHotDealProcessor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;

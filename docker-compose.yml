@@ -31,6 +31,8 @@ services:
       - REDIS_STREAM_POLL_TIMEOUT=100
       - REDIS_STREAM_DELIVERY_RETRY_COUNT=3
       - REDIS_STREAM_MESSAGE_CLAIM_MIN_IDLE_TIME=30000
+      - REDIS_STREAM_NEW_HOTDEALS_KEY=streamNewHotdeals
+      - REDIS_STREAM_NEW_HOTDEALS_PARTITIONS=1
     depends_on:
       - mysql
       - redis

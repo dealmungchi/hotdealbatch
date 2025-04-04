@@ -38,6 +38,9 @@ redis:
     message-claim-min-idle-time: ${REDIS_STREAM_MESSAGE_CLAIM_MIN_IDLE_TIME:30000}
     backpressure-buffer-size: ${REDIS_STREAM_BACKPRESSURE_BUFFER_SIZE:512}
 
+    new-hotdeals-key-prefix: ${REDIS_STREAM_NEW_HOTDEALS_KEY_PREFIX:streamNewHotdeals}
+    new-hotdeals-partitions: ${REDIS_STREAM_NEW_HOTDEALS_PARTITIONS:1}
+
 file:
   upload-dir: ${FILE_UPLOAD_DIR:/usr/local/share/data}
 
