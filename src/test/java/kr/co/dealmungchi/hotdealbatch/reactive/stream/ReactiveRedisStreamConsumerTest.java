@@ -212,7 +212,62 @@ public class ReactiveRedisStreamConsumerTest {
         // Given
         String streamKey = config.getStreamKeys().get(0);
         String field = "Coolandjoy";
-        String base64EncodedData = "YmFzZTY0RGF0YQ=="; // "base64Data" encoded
+        // Single HotDealDto JSON as base64 - simulating new format
+        String singleDealJson = "{\"title\":\"Test Deal\",\"link\":\"https://example.com/deal\",\"price\":\"10000\",\"thumbnail\":\"https://example.com/image.jpg\",\"id\":\"123\",\"posted_at\":\"2025-04-04\",\"provider\":\"Coolandjoy\"}";
+        String base64EncodedData = java.util.Base64.getEncoder().encodeToString(singleDealJson.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+
+        Map<String, String> messageEntries = new HashMap<>();
+        messageEntries.put(field, base64EncodedData);
+
+        ReactiveStreamOperations<String, String, String> streamOperations = reactiveRedisTemplate
+                .opsForStream();
+        
+        // Create consumer group first
+        try {
+            streamOperations.createGroup(streamKey, ReadOffset.latest(), "test-group").block();
+        } catch (RedisBusyException ignored) {
+            // Ignore if the group already exists
+        }
+        
+        // Create CountDownLatch for synchronization
+        CountDownLatch latch = new CountDownLatch(1);
+        
+        // Set up our mock with proper typing (Mono<Void>)
+        when(messageHandler.handleMessageReactive(any(RedisStreamMessage.class)))
+                .thenAnswer(invocation -> {
+                    // Count down the latch in a separate thread to simulate async completion
+                    new Thread(latch::countDown).start();
+                    return Mono.<Void>empty();
+                });
+
+        // Add message after handler is set up
+        streamOperations.add(MapRecord.create(streamKey, messageEntries)).block();
+
+        // When
+        consumer.init();
+
+        // Then - wait for message processing with timeout
+        boolean processed = latch.await(5, TimeUnit.SECONDS);
+        assertThat(processed).isTrue();
+
+        // Verify message was processed correctly
+        ArgumentCaptor<RedisStreamMessage> messageCaptor = ArgumentCaptor.forClass(RedisStreamMessage.class);
+        verify(messageHandler).handleMessageReactive(messageCaptor.capture());
+        RedisStreamMessage capturedMessage = messageCaptor.getValue();
+        assertThat(capturedMessage.getStreamKey()).isEqualTo(streamKey);
+        assertThat(capturedMessage.getProvider()).isEqualTo(field);
+        assertThat(capturedMessage.getData()).isEqualTo(base64EncodedData);
+    }
+    
+    @Test
+    @DisplayName("Given a stream with base64-encoded array data (legacy format), when processing, then data is decoded and handled correctly")
+    void shouldDecodeLegacyArrayBase64DataAndHandleCorrectly() throws InterruptedException {
+        // Given
+        String streamKey = config.getStreamKeys().get(0);
+        String field = "Coolandjoy";
+        // Array of HotDealDto JSON as base64 - simulating old format
+        String arrayDealJson = "[{\"title\":\"Test Deal 1\",\"link\":\"https://example.com/deal1\",\"price\":\"10000\",\"thumbnail\":\"https://example.com/image1.jpg\",\"id\":\"123\",\"posted_at\":\"2025-04-04\",\"provider\":\"Coolandjoy\"},{\"title\":\"Test Deal 2\",\"link\":\"https://example.com/deal2\",\"price\":\"20000\",\"thumbnail\":\"https://example.com/image2.jpg\",\"id\":\"124\",\"posted_at\":\"2025-04-04\",\"provider\":\"Coolandjoy\"}]";
+        String base64EncodedData = java.util.Base64.getEncoder().encodeToString(arrayDealJson.getBytes(java.nio.charset.StandardCharsets.UTF_8));
 
         Map<String, String> messageEntries = new HashMap<>();
         messageEntries.put(field, base64EncodedData);

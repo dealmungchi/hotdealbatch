@@ -38,17 +38,29 @@ public class ReactiveHotDealProcessor {
     private static final int NEW_HOTDEALS_STREAM_MAX_LENGTH = 100;
     
     // Sink: Buffers up to 100 items while managing backpressure
-    private final Sinks.Many<HotDealDto> sink = Sinks.many().multicast().onBackpressureBuffer(100, false);
+    // Using replay instead of multicast to ensure the sink buffers items even without active subscribers
+    private final Sinks.Many<HotDealDto> sink = Sinks.many().replay().limit(100);
 
     @EventListener(ApplicationReadyEvent.class)
     public void init() {
-        sink.asFlux()
+        // Initialize the subscription to ensure we have active subscribers before receiving messages
+        // This is crucial to avoid FAIL_ZERO_SUBSCRIBER errors
+        Flux<List<HotDealDto>> batchFlux = sink.asFlux()
                 .onBackpressureBuffer(100, dropped -> log.warn("Dropped hot deal due to backpressure: {}", dropped))
                 // Batch processing every 20 items or 10 seconds
                 .windowTimeout(20, Duration.ofSeconds(10))
-                .flatMap(window -> window.collectList())
-                .publishOn(Schedulers.boundedElastic())
-                .subscribe(this::processBatch, error -> log.error("Error in reactive pipeline", error));
+                .flatMap(window -> window.collectList());
+        
+        // Subscribe to the batch flux on a dedicated scheduler
+        batchFlux.publishOn(Schedulers.boundedElastic())
+                .subscribe(
+                    this::processBatch,
+                    error -> log.error("Error in reactive pipeline", error),
+                    () -> log.info("Hot deal processor completed (this should not happen)")
+                );
+                
+        // Log confirmation of subscription initialization
+        log.info("Hot deal processor sink subscription initialized");
                 
         // Periodically trim new hot deals streams to prevent unbounded growth
         Flux.interval(Duration.ofMinutes(1))
@@ -66,7 +78,20 @@ public class ReactiveHotDealProcessor {
     public void push(HotDealDto dto) {
         Sinks.EmitResult result = sink.tryEmitNext(dto);
         if (result.isFailure()) {
-            log.warn("Failed to emit hot deal: {} {} . Result: {}", dto.provider(), dto.link(), result);
+            if (result == Sinks.EmitResult.FAIL_ZERO_SUBSCRIBER) {
+                // If there are no subscribers yet, try again with emitNext which will buffer the value
+                // until a subscriber connects (since we're using a replay sink)
+                try {
+                    sink.emitNext(dto, Sinks.EmitFailureHandler.FAIL_FAST);
+                    log.debug("Successfully emitted hot deal with forced emission: {} {}", dto.provider(), dto.link());
+                } catch (Exception e) {
+                    log.warn("Failed to force emit hot deal: {} {} . Error: {}", dto.provider(), dto.link(), e.getMessage());
+                }
+            } else {
+                log.warn("Failed to emit hot deal: {} {} . Result: {}", dto.provider(), dto.link(), result);
+            }
+        } else {
+            log.debug("Successfully emitted hot deal: {} {}", dto.provider(), dto.link());
         }
     }
 
@@ -133,40 +158,41 @@ public class ReactiveHotDealProcessor {
                 return;
             }
             
-            int partition = Math.abs(newDealDtos.hashCode() % streamConfig.getNewHotDealsPartitions());
-            String newStreamKey = String.format("%s:%d", streamConfig.getNewHotDealsKeyPrefix(), partition);
-            
-            // For each provider in the batch, publish to the new stream with the same format
-            newDealDtos.stream()
-                .collect(Collectors.groupingBy(HotDealDto::provider))
-                .forEach((provider, providerDtos) -> {
-                    try {
-                        String providerJsonData = objectMapper.writeValueAsString(providerDtos);
-                        String providerBase64Data = java.util.Base64.getEncoder().encodeToString(
-                                providerJsonData.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-                        
-                        // Add to new stream with the same key-value format as the original stream
-                        reactiveRedisTemplate.opsForStream()
-                                .add(newStreamKey, Collections.singletonMap(provider, providerBase64Data))
-                                .subscribe(
-                                        messageId -> log.debug("Published new hot deals to new stream {}, provider: {}, message ID: {}",
-                                                newStreamKey, provider, messageId),
-                                        error -> log.error("Failed to publish new hot deals to new stream {}, provider: {}, error: {}",
-                                                newStreamKey, provider, error.getMessage())
-                                );
-                    } catch (Exception e) {
-                        log.error("Error encoding provider data for {}: {}", provider, e.getMessage());
-                    }
-                });
+            // For each provider in the batch, publish individual hot deals to the new stream
+            newDealDtos.forEach(dto -> {
+                try {
+                    String provider = dto.provider();
+                    int partition = Math.abs(dto.link().hashCode() % streamConfig.getNewHotDealsPartitions());
+                    String newStreamKey = String.format("%s:%d", streamConfig.getNewHotDealsKeyPrefix(), partition);
+                    
+                    // Encode a single hot deal as JSON
+                    String dtoJsonData = objectMapper.writeValueAsString(dto);
+                    String base64Data = java.util.Base64.getEncoder().encodeToString(
+                            dtoJsonData.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                    
+                    // Add to new stream with the same key-value format as the original stream, but one message per hot deal
+                    reactiveRedisTemplate.opsForStream()
+                            .add(newStreamKey, Collections.singletonMap(provider, base64Data))
+                            .subscribe(
+                                    messageId -> log.debug("Published single hot deal to new stream {}, provider: {}, link: {}, message ID: {}",
+                                            newStreamKey, provider, dto.link(), messageId),
+                                    error -> log.error("Failed to publish hot deal to new stream {}, provider: {}, link: {}, error: {}",
+                                            newStreamKey, provider, dto.link(), error.getMessage())
+                            );
+                } catch (Exception e) {
+                    log.error("Error encoding hot deal data for {}, link: {}: {}", 
+                            dto.provider(), dto.link(), e.getMessage());
+                }
+            });
                 
-            // Trim the stream right after adding new entries
-            trimStreamToMaxLength(newStreamKey).subscribe(
+            // Trim all new hot deals streams
+            trimNewHotDealsStreams().subscribe(
                     trimmed -> {
                         if (trimmed > 0) {
-                            log.debug("Trimmed {} entries from stream {}", trimmed, newStreamKey);
+                            log.debug("Trimmed {} total entries from new hot deals streams", trimmed);
                         }
                     },
-                    error -> log.error("Failed to trim stream {}: {}", newStreamKey, error.getMessage())
+                    error -> log.error("Failed to trim new hot deals streams: {}", error.getMessage())
             );
         } catch (Exception e) {
             log.error("Error publishing new hot deals to stream: {}", e.getMessage());

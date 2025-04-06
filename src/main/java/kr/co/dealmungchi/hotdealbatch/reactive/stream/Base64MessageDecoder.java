@@ -23,12 +23,21 @@ public class Base64MessageDecoder {
         return Mono.fromCallable(() -> {
             try {
                 String json = new String(Base64.getDecoder().decode(encodedData), StandardCharsets.UTF_8);
-                return objectMapper.readValue(json, HotDealDto[].class);
+                try {
+                    // Try to parse as a single HotDealDto object first
+                    HotDealDto dto = objectMapper.readValue(json, HotDealDto.class);
+                    return new HotDealDto[] { dto };
+                } catch (JsonProcessingException singleItemError) {
+                    // If parsing as a single object fails, try as an array (for backward compatibility)
+                    try {
+                        return objectMapper.readValue(json, HotDealDto[].class);
+                    } catch (JsonProcessingException arrayError) {
+                        log.error("Failed to parse JSON as object or array after decoding: {}", encodedData, arrayError);
+                        return new HotDealDto[0];
+                    }
+                }
             } catch (IllegalArgumentException e) {
                 log.error("Failed to decode base64 message: {}", encodedData, e);
-                return new HotDealDto[0];
-            } catch (JsonProcessingException e) {
-                log.error("Failed to parse JSON after decoding: {}", encodedData, e);
                 return new HotDealDto[0];
             }
         }).flatMapMany(Flux::fromArray);
