@@ -3,12 +3,16 @@ package kr.co.dealmungchi.hotdealbatch.reactive.stream;
 import lombok.Getter;
 
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * Configuration for Redis streams.
+ * Provides properties and utility methods for working with Redis streams,
+ * including partitioning for both input and output streams.
+ */
 @Configuration
 @Getter
 public class RedisStreamConfig {
@@ -49,15 +53,36 @@ public class RedisStreamConfig {
     @Value("${redis.stream.new-hotdeals-partitions:1}")
     private int newHotDealsPartitions;
 
+    /**
+     * Gets the list of input stream keys based on the configured number of partitions.
+     * Each key follows the pattern {prefix}:{partition}.
+     *
+     * @return A list of input stream keys
+     */
     public List<String> getStreamKeys() {
-        return IntStream.range(0, partitions)
-                .mapToObj(partition -> String.format("%s:%d", streamKeyPrefix, partition % partitions))
-                .collect(Collectors.toList());
+        return generatePartitionedKeys(streamKeyPrefix, partitions);
     }
     
+    /**
+     * Gets the list of output stream keys for new hot deals based on the configured number of partitions.
+     * Each key follows the pattern {prefix}:{partition}.
+     *
+     * @return A list of output stream keys for new hot deals
+     */
     public List<String> getNewHotDealsStreamKeys() {
-        return IntStream.range(0, newHotDealsPartitions)
-                .mapToObj(partition -> String.format("%s:%d", newHotDealsKeyPrefix, partition % newHotDealsPartitions))
-                .collect(Collectors.toList());
+        return generatePartitionedKeys(newHotDealsKeyPrefix, newHotDealsPartitions);
+    }
+    
+    /**
+     * Generates a list of partitioned keys following the pattern {prefix}:{partition}.
+     *
+     * @param keyPrefix The prefix for the keys
+     * @param numPartitions The number of partitions to generate
+     * @return A list of partitioned keys
+     */
+    private List<String> generatePartitionedKeys(String keyPrefix, int numPartitions) {
+        return IntStream.range(0, numPartitions)
+                .mapToObj(partition -> String.format("%s:%d", keyPrefix, partition))
+                .toList();
     }
 }
