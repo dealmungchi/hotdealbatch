@@ -14,6 +14,7 @@ import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.stereotype.Component;
 
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
 import reactor.core.scheduler.Schedulers;
 
@@ -203,13 +204,13 @@ public class ReactiveHotDealProcessor {
      * Trims all new hot deals streams to the configured maximum length.
      * @return The total number of entries trimmed
      */
-    private reactor.core.publisher.Mono<Long> trimNewHotDealsStreams() {
+    private Mono<Long> trimNewHotDealsStreams() {
         List<String> newHotDealsStreamKeys = streamConfig.getNewHotDealsStreamKeys();
         if (newHotDealsStreamKeys.isEmpty()) {
-            return reactor.core.publisher.Mono.just(0L);
+            return Mono.just(0L);
         }
         
-        return reactor.core.publisher.Flux.fromIterable(newHotDealsStreamKeys)
+        return Flux.fromIterable(newHotDealsStreamKeys)
                 .flatMap(this::trimStreamToMaxLength)
                 .reduce(0L, Long::sum);
     }
@@ -219,11 +220,11 @@ public class ReactiveHotDealProcessor {
      * @param streamKey The stream key to trim
      * @return The number of entries trimmed
      */
-    private reactor.core.publisher.Mono<Long> trimStreamToMaxLength(String streamKey) {
+    private Mono<Long> trimStreamToMaxLength(String streamKey) {
         return reactiveRedisTemplate.opsForStream().trim(streamKey, NEW_HOTDEALS_STREAM_MAX_LENGTH, true)
                 .onErrorResume(e -> {
                     log.warn("Failed to trim stream {}: {}", streamKey, e.getMessage());
-                    return reactor.core.publisher.Mono.just(0L);
+                    return Mono.just(0L);
                 });
     }
 }
