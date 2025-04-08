@@ -36,6 +36,8 @@ public class HotDeal extends BaseTimeEntity {
     private String price;
     
     private String thumbnailHash;
+
+    private String thumbnailLink;
     
     private String postedAt;
 
@@ -55,6 +57,7 @@ public class HotDeal extends BaseTimeEntity {
                 .provider(provider);
 
         if (Objects.nonNull(dto.thumbnail())) {
+            builder.thumbnailLink(dto.thumbnailLink());
             String thumbnailHash = Hashing.sha256()
                     .hashString(dto.thumbnail(), StandardCharsets.UTF_8)
                     .toString();

@@ -11,7 +11,6 @@ import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import java.util.Collections;
 
 /**
  * Decodes Base64-encoded messages containing HotDealDto data in JSON format.
