@@ -39,7 +39,7 @@ class ReactiveHotDealProcessor(
     private val newHotdealsStreamMaxLength = 100
     
     // Sink: Buffers up to 100 items while managing backpressure
-    private val sink: Sinks.Many<HotDealDto> = Sinks.many().replay().limit(100)
+    private val sink: Sinks.Many<HotDealDto> = Sinks.many().replay().limit(1000)
 
     /**
      * Initializes the reactive pipeline and periodic maintenance tasks.
@@ -57,8 +57,8 @@ class ReactiveHotDealProcessor(
      */
     private fun initializeReactivePipeline() {
         sink.asFlux()
-            .onBackpressureBuffer(1000) { dropped -> log.warn("Dropped hot deal due to backpressure: {}", dropped) }
-            .windowTimeout(20, Duration.ofSeconds(10))
+            .onBackpressureBuffer(2000) { dropped -> log.warn("Dropped hot deal due to backpressure: {}", dropped) }
+            .windowTimeout(100, Duration.ofSeconds(10))
             .flatMap { window -> window.collectList() }
             .publishOn(Schedulers.boundedElastic())
             .subscribe(
