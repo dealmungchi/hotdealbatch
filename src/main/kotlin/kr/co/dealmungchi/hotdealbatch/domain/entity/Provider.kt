@@ -6,7 +6,7 @@ import jakarta.persistence.*
  * Entity representing a deal provider.
  */
 @Entity
-@Table(name = "providers")
+@Table(name = "providers", uniqueConstraints = [UniqueConstraint(columnNames = ["provider_type"])])
 class Provider(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

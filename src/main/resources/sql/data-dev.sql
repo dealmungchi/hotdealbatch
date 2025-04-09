@@ -1,4 +1,4 @@
-INSERT INTO providers(provider_type) VALUES 
+INSERT IGNORE INTO providers(provider_type) VALUES
 ('ARCA'), 
 ('CLIEN'), 
 ('COOLANDJOY'), 
@@ -7,5 +7,4 @@ INSERT INTO providers(provider_type) VALUES
 ('PPOMPPU'),
 ('PPOMPPUEN'),
 ('QUASAR'),
-('RULIWEB')
-;
+('RULIWEB');
