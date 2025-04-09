@@ -1,12 +1,17 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
     id 'org.springframework.boot' version '3.4.4'
     id 'io.spring.dependency-management' version '1.1.0'
-    id 'java'
+    id 'org.jetbrains.kotlin.jvm' version '1.9.20'
+    id 'org.jetbrains.kotlin.plugin.spring' version '1.9.20'
+    id 'org.jetbrains.kotlin.plugin.jpa' version '1.9.20'
+    id 'org.jetbrains.kotlin.kapt' version '1.9.20'
 }
 
 group = 'kr.co.dealmungchi'
 version = '0.0.1-SNAPSHOT'
-sourceCompatibility = '17'
+java.sourceCompatibility = JavaVersion.VERSION_17
 
 repositories {
     mavenCentral()
@@ -19,6 +24,14 @@ configurations {
 }
 
 dependencies {
+    // Kotlin
+    implementation 'org.jetbrains.kotlin:kotlin-reflect'
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-reactor'
+    implementation 'io.projectreactor.kotlin:reactor-kotlin-extensions'
+    implementation 'com.fasterxml.jackson.module:jackson-module-kotlin'
+
     // Spring Boot Starter
     implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'org.springframework.boot:spring-boot-starter-web'
@@ -41,15 +54,6 @@ dependencies {
     // Actuator & Metrics
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'io.micrometer:micrometer-registry-prometheus'
-    
-    // Lombok
-    compileOnly 'org.projectlombok:lombok'
-    annotationProcessor 'org.projectlombok:lombok'
-    testCompileOnly 'org.projectlombok:lombok'
-    testAnnotationProcessor 'org.projectlombok:lombok'
-
-    // Guava
-    implementation 'com.google.guava:guava:latest.release'
 
     // S3
     implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3:3.1.1'
@@ -60,11 +64,27 @@ dependencies {
     testImplementation 'io.projectreactor:reactor-test'
     testImplementation 'org.testcontainers:testcontainers'
     testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test'
+    testImplementation 'org.mockito.kotlin:mockito-kotlin:5.4.0'
     
     // Embedded Redis for testing
     testImplementation 'it.ozimov:embedded-redis:0.7.3'
 }
 
+sourceSets {
+    main.kotlin.srcDirs = ['src/main/kotlin']
+    main.java.srcDirs = []
+    test.kotlin.srcDirs = ['src/test/kotlin']
+    test.java.srcDirs = []
+}
+
 tasks.named('test') {
     useJUnitPlatform()
+}
+
+tasks.register('createKotlinSourceDirs') {
+    doLast {
+        mkdir 'src/main/kotlin/kr/co/dealmungchi/hotdealbatch'
+        mkdir 'src/test/kotlin/kr/co/dealmungchi/hotdealbatch'
+    }
 }
