@@ -67,7 +67,7 @@ public class ReactiveHotDealProcessor {
      */
     private void initializeReactivePipeline() {
         sink.asFlux()
-            .onBackpressureBuffer(100, dropped -> log.warn("Dropped hot deal due to backpressure: {}", dropped))
+            .onBackpressureBuffer(1000, dropped -> log.warn("Dropped hot deal due to backpressure: {}", dropped))
             .windowTimeout(20, Duration.ofSeconds(10))
             .flatMap(window -> window.collectList())
             .publishOn(Schedulers.boundedElastic())

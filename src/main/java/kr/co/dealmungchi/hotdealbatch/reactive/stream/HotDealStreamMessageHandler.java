@@ -40,17 +40,10 @@ public class HotDealStreamMessageHandler implements StreamMessageHandler {
     public Mono<Void> handleMessageReactive(RedisStreamMessage message) {
         String messageId = message.getMessageId();
         
-        return decoder.decode(message.getData())
-            .doOnNext(reactiveProcessor::push)
-            .collectList()
-            .flatMap(dtos -> {
-                int size = dtos.size();
-                if (size == 0) {
-                    log.warn("No DTOs found in message {}", messageId);
-                    return Mono.empty();
-                }
-                
-                log.debug("Processed {} DTOs from message {}", size, messageId);
+        return decoder.decode(message.getData()) // Ensure this returns Mono<HotDealDto>
+            .flatMap(dto -> {
+                reactiveProcessor.push(dto);
+                log.debug("Processed DTO from message {}", messageId);
                 return Mono.empty();
             });
     }

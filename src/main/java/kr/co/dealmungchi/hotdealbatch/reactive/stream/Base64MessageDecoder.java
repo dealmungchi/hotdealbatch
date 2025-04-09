@@ -24,17 +24,17 @@ public class Base64MessageDecoder {
     private final ObjectMapper objectMapper;
     
     /**
-     * Decodes a Base64-encoded string into a stream of HotDealDto objects.
+     * Decodes a Base64-encoded string into a HotDealDto object.
      *
      * @param encodedData The Base64-encoded JSON data
-     * @return A Flux of HotDealDto objects
+     * @return A Mono of HotDealDto object
      */
-    public Flux<HotDealDto> decode(String encodedData) {
-        return Mono.fromCallable(() -> decodeBase64(encodedData))
-                .flatMapMany(json -> parseSingleOrArray(json, encodedData))
+    public Mono<HotDealDto> decode(String encodedData) {
+        return Mono.fromCallable(() -> toJson(encodedData))
+                .flatMap(this::parse)
                 .onErrorResume(e -> {
                     log.error("Error processing encoded data: {}", encodedData, e);
-                    return Flux.empty();
+                    return Mono.empty();
                 });
     }
     
@@ -45,7 +45,7 @@ public class Base64MessageDecoder {
      * @return The decoded string
      * @throws IllegalArgumentException If the input is not valid Base64
      */
-    private String decodeBase64(String encodedData) {
+    private String toJson(String encodedData) {
         try {
             return new String(Base64.getDecoder().decode(encodedData), StandardCharsets.UTF_8);
         } catch (IllegalArgumentException e) {
@@ -55,25 +55,18 @@ public class Base64MessageDecoder {
     }
     
     /**
-     * Attempts to parse JSON as either a single HotDealDto or an array.
+     * Parses JSON as a single HotDealDto object.
      *
      * @param json The JSON string to parse
-     * @param originalData The original encoded data (for logging purposes)
-     * @return A Flux of HotDealDto objects
+     * @return A Mono of HotDealDto object
      */
-    private Flux<HotDealDto> parseSingleOrArray(String json, String originalData) {
-        // Try parsing as a single object first
+    private Mono<HotDealDto> parse(String json) {
         try {
             HotDealDto dto = objectMapper.readValue(json, HotDealDto.class);
-            return Flux.just(dto);
-        } catch (JsonProcessingException singleItemError) {
-            // If that fails, try as an array
-            try {
-                return Flux.fromArray(objectMapper.readValue(json, HotDealDto[].class));
-            } catch (JsonProcessingException arrayError) {
-                log.error("Failed to parse JSON as object or array after decoding: {}", originalData, arrayError);
-                return Flux.empty();
-            }
+            return Mono.just(dto);
+        } catch (JsonProcessingException e) {
+            log.error("Failed to parse JSON as object: {}", json, e);
+            return Mono.empty();
         }
     }
 }
