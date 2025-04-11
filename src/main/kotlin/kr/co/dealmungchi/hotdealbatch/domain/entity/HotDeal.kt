@@ -31,6 +31,7 @@ class HotDeal(
     
     val thumbnailHash: String? = null,
 
+    @Column(length = 2000)
     val thumbnailLink: String? = null,
     
     val postedAt: String? = null,
