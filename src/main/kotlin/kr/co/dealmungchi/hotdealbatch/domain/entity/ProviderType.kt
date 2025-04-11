@@ -13,7 +13,9 @@ enum class ProviderType(val providerEn: String) {
     PPOMPPUEN("PpomEn"),
     PPOMPPU("Ppom"),
     QUASAR("Quasar"),
-    RULIWEB("Ruliweb");
+    RULIWEB("Ruliweb"),
+    DEALBADA("Dealbada")
+    ;
 
     companion object {
         /**
