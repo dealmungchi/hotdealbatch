@@ -11,7 +11,8 @@ MODIFY provider_type ENUM(
   'RULIWEB',
   'DEALBADA',
   'MISSYCOUPONS',
-  'MALLTAIL'
+  'MALLTAIL',
+  'BBASAK'
 ) NOT NULL;
 
 INSERT IGNORE INTO providers(provider_type) VALUES ('ARCA');
@@ -26,3 +27,4 @@ INSERT IGNORE INTO providers(provider_type) VALUES ('RULIWEB');
 INSERT IGNORE INTO providers(provider_type) VALUES ('DEALBADA');
 INSERT IGNORE INTO providers(provider_type) VALUES ('MISSYCOUPONS');
 INSERT IGNORE INTO providers(provider_type) VALUES ('MALLTAIL');
+INSERT IGNORE INTO providers(provider_type) VALUES ('BBASAK');
