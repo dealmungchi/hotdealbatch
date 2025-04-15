@@ -19,6 +19,7 @@ enum class ProviderType(val providerEn: String) {
     MALLTAIL("Malltail"),
     BBASAK("Bbasak"),
     CITY("City"),
+    EOMISAE("Eomisae"),
     ;
 
     companion object {
