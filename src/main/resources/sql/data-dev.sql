@@ -14,7 +14,8 @@ MODIFY provider_type ENUM(
   'MALLTAIL',
   'BBASAK',
   'CITY',
-  'EOMISAE'
+  'EOMISAE',
+  'ZOD'
 ) NOT NULL;
 
 INSERT IGNORE INTO providers(provider_type) VALUES ('ARCA');
@@ -32,3 +33,4 @@ INSERT IGNORE INTO providers(provider_type) VALUES ('MALLTAIL');
 INSERT IGNORE INTO providers(provider_type) VALUES ('BBASAK');
 INSERT IGNORE INTO providers(provider_type) VALUES ('CITY');
 INSERT IGNORE INTO providers(provider_type) VALUES ('EOMISAE');
+INSERT IGNORE INTO providers(provider_type) VALUES ('ZOD');
