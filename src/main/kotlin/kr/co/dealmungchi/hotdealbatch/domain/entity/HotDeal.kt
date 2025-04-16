@@ -36,6 +36,8 @@ class HotDeal(
     
     val postedAt: String? = null,
 
+    val viewCount: Long = 0,
+
     @ManyToOne
     @JoinColumn(name = "provider_id", nullable = false)
     val provider: Provider
