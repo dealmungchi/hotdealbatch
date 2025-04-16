@@ -12,7 +12,7 @@ import java.security.MessageDigest
  * Entity representing a hot deal.
  */
 @Entity
-@Table(name = "hot_deals", uniqueConstraints = [UniqueConstraint(columnNames = ["link"])])
+@Table(name = "hotdeals", uniqueConstraints = [UniqueConstraint(columnNames = ["link"])])
 class HotDeal(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
