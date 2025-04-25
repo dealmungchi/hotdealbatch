@@ -9,13 +9,9 @@ This application consumes messages from Redis Streams, processes them, and store
 ## Features
 
 - Redis Streams integration with consumer group processing
-- Base64 message decoding
+  - publush to new hotdeals stream when new hotdeals are found
 - Thumbnail processing to hash and store to local or S3(optional) storage
-- Explicit acknowledgment (XACK) for processed messages
-- Pending message recovery with XCLAIM
-- Back-pressure control
-- dotenv configuration
-- Containerization with Docker
+- Save new hotdeals to database
 
 ## Requirements
 
