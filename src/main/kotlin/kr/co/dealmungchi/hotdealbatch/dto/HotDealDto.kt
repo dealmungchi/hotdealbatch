@@ -19,6 +19,9 @@ data class HotDealDto(
     
     @JsonProperty("posted_at")
     val postedAt: String?,
+
+    @JsonProperty("category")
+    val category: String?,
     
     val provider: String
 )
