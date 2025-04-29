@@ -5,7 +5,7 @@ import kr.co.dealmungchi.hotdealbatch.domain.entity.HotDeal
 import kr.co.dealmungchi.hotdealbatch.domain.repository.HotDealRepository
 import kr.co.dealmungchi.hotdealbatch.domain.service.HotdealService
 import kr.co.dealmungchi.hotdealbatch.dto.HotDealDto
-import kr.co.dealmungchi.hotdealbatch.service.ProviderCacheService
+import kr.co.dealmungchi.hotdealbatch.service.CacheLoader
 import org.slf4j.LoggerFactory
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.event.EventListener
@@ -28,7 +28,7 @@ import java.util.Base64
 class ReactiveHotDealProcessor(
     private val repository: HotDealRepository,
     private val hotdealService: HotdealService,
-    private val providerCacheService: ProviderCacheService,
+    private val cacheLoader: CacheLoader,
     private val reactiveRedisTemplate: ReactiveRedisTemplate<String, String>,
     private val streamConfig: RedisStreamConfig,
     private val objectMapper: ObjectMapper
@@ -143,7 +143,7 @@ class ReactiveHotDealProcessor(
             .filter { !existingLinks.contains(it.key) }
             .mapNotNull { entry ->
                 try {
-                    HotDeal.fromDto(entry.value, hotdealService, providerCacheService)
+                    HotDeal.fromDto(entry.value, hotdealService, cacheLoader)
                 } catch (e: Exception) {
                     log.error("Error processing hot deal: {}. Error: {}", entry.key, e.message)
                     null
